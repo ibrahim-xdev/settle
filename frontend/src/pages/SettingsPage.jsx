@@ -142,7 +142,7 @@ export default function SettingsPage() {
         )}
       </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-2">
         {/* Profile Details Card */}
         <div className="bg-white rounded-[10px] border border-[#DEDACD] shadow-sm p-6 space-y-2">
           <h3 className="font-display text-[18px] text-[#17140F]">

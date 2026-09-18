@@ -35,7 +35,6 @@ export default function DashboardLayout({ children }) {
         </svg>
       ),
     },
-
     {
       name: "Settings",
       path: "/dashboard/settings",
@@ -58,7 +57,8 @@ export default function DashboardLayout({ children }) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F4F2ED] text-[#17140F] antialiased flex font-body">
+    /* FIX 1: Lock outer viewport to h-screen and prevent body window scrolling */
+    <div className="h-screen w-screen overflow-hidden bg-[#F4F2ED] text-[#17140F] antialiased flex font-body">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
         .font-display { font-family: 'Fraunces', serif; }
@@ -79,9 +79,9 @@ export default function DashboardLayout({ children }) {
         )}
       </AnimatePresence>
 
-      {/* Left Sidebar */}
+      {/* FIX 2: Fixed height for sidebar with shrink-0 */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-[#DEDACD] flex flex-col justify-between transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed md:static inset-y-0 left-0 z-50 h-screen w-64 shrink-0 bg-white border-r border-[#DEDACD] flex flex-col justify-between transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -161,10 +161,8 @@ export default function DashboardLayout({ children }) {
         </div>
       </aside>
 
-      {/* Right Main Column */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navbar */}
-
+      {/* FIX 3: Set right column height to h-screen so main can scroll independently */}
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         {/* Main Content Area */}
         <main className="flex-1 p-2 overflow-y-auto">
           {children ? (
