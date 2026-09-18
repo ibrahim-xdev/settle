@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -6,6 +6,42 @@ export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState({ name: "Loading...", email: "..." });
+
+  // Fetch user data directly from DB backend on layout load
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5001/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to authenticate user");
+        }
+
+        const data = await response.json();
+        setUser({ name: data.name, email: data.email });
+      } catch (error) {
+        console.error("Failed to load user profile from DB:", error);
+        // Optional: logout if token is invalid or expired
+        // localStorage.removeItem("token");
+        // navigate("/login");
+      }
+    };
+
+    fetchUserProfile();
+  }, [navigate]);
 
   // Logout handler
   const handleLogout = () => {
@@ -57,7 +93,6 @@ export default function DashboardLayout({ children }) {
   ];
 
   return (
-    /* FIX 1: Lock outer viewport to h-screen and prevent body window scrolling */
     <div className="h-screen w-screen overflow-hidden bg-[#F4F2ED] text-[#17140F] antialiased flex font-body">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
@@ -79,7 +114,7 @@ export default function DashboardLayout({ children }) {
         )}
       </AnimatePresence>
 
-      {/* FIX 2: Fixed height for sidebar with shrink-0 */}
+      {/* Left Sidebar */}
       <aside
         className={`fixed md:static inset-y-0 left-0 z-50 h-screen w-64 shrink-0 bg-white border-r border-[#DEDACD] flex flex-col justify-between transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -128,13 +163,18 @@ export default function DashboardLayout({ children }) {
           </nav>
         </div>
 
-        {/* User Account / Logout Action */}
+        {/* Dynamic Database User Account Details */}
         <div className="p-4 border-t border-[#EDEAE1]">
           <div className="flex items-center justify-between px-2 py-1">
-            <div>
-              <p className="text-[13px] font-medium text-[#17140F]">Ibrahim</p>
-              <p className="text-[11px] text-[#6E6A5E] truncate max-w-[130px]">
-                ibrahim@example.com
+            <div className="overflow-hidden">
+              <p className="text-[13px] font-medium text-[#17140F] truncate">
+                {user.name}
+              </p>
+              <p
+                className="text-[11px] text-[#6E6A5E] truncate max-w-[130px]"
+                title={user.email}
+              >
+                {user.email}
               </p>
             </div>
             <button
@@ -161,9 +201,8 @@ export default function DashboardLayout({ children }) {
         </div>
       </aside>
 
-      {/* FIX 3: Set right column height to h-screen so main can scroll independently */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
-        {/* Main Content Area */}
         <main className="flex-1 p-2 overflow-y-auto">
           {children ? (
             children
