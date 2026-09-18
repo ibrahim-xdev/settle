@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap");
+
+.font-display {
+  font-family: "Fraunces", serif;
+}
+.font-body {
+  font-family: "Inter", sans-serif;
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: rotate(-18deg) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-10deg) scale(1);
+  }
+}
+@keyframes float-card {
+  0%,
+  100% {
+    transform: translateY(0) rotate(3deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+}
+
+.settle-1 {
+  animation: settle-in 0.6s ease-out 0.05s both;
+}
+.settle-2 {
+  animation: settle-in 0.6s ease-out 0.18s both;
+}
+.settle-3 {
+  animation: settle-in 0.6s ease-out 0.31s both;
+}
+.settle-4 {
+  animation: settle-in 0.6s ease-out 0.44s both;
+}
+.settle-card {
+  animation:
+    settle-in 0.7s ease-out 0.3s both,
+    float-card 6s ease-in-out 1.2s infinite;
+}
+.settle-stamp {
+  animation: stamp-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settle-1,
+  .settle-2,
+  .settle-3,
+  .settle-4,
+  .settle-card,
+  .settle-stamp {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
