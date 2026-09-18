@@ -7,12 +7,11 @@ const {
 } = require("../config/db");
 const authenticateToken = require("../middleware/authMiddleware");
 const generateInvoicePDF = require("../services/pdfService");
-const sendInvoiceEmail = require("../services/emailService");
+const { sendInvoiceEmail } = require("../services/emailService");
 
 const router = express.Router();
 
 router.use(authenticateToken);
-
 // CREATE & SEND INVOICE (One-Click)
 router.post("/", async (req, res) => {
   const { clientName, clientEmail, projectDescription, amount, dueDate } =
@@ -55,21 +54,51 @@ router.post("/", async (req, res) => {
 
     const invoice = result.rows[0];
 
-    // 3. Generate PDF Buffer & File
-    const { pdfBuffer } = await generateInvoicePDF(invoice);
+    let pdfBuffer;
 
-    // 4. Send Email via Nodemailer using User's SMTP Credentials
-    await sendInvoiceEmail(invoice, pdfBuffer, user);
+    // 3. Generate PDF Buffer with strict error capture
+    try {
+      const pdfResult = await generateInvoicePDF(invoice);
+      pdfBuffer = pdfResult.pdfBuffer;
+    } catch (pdfErr) {
+      console.error("PDF Generation Failed:", pdfErr);
 
-    res.status(201).json({
+      // Delete created DB invoice to prevent orphan records
+      await pool.query("DELETE FROM invoices WHERE id = $1", [invoice.id]);
+
+      return res.status(500).json({
+        error: "PDF generation failed. Please check browser service settings.",
+        details: pdfErr.message,
+      });
+    }
+
+    // 4. Send Email via Nodemailer
+    try {
+      await sendInvoiceEmail(invoice, pdfBuffer, user);
+    } catch (emailErr) {
+      console.error("Email Dispatch Failed:", emailErr);
+
+      // Return invoice ID so frontend can show invoice was saved but not mailed
+      return res.status(207).json({
+        id: invoice.id,
+        invoiceNumber: invoice.invoice_number,
+        status: "created_but_not_sent",
+        error:
+          "Invoice saved, but email delivery failed. Please verify SMTP settings.",
+        details: emailErr.message,
+      });
+    }
+
+    // 5. Complete success response
+    return res.status(201).json({
       id: invoice.id,
       invoiceNumber: invoice.invoice_number,
       status: "created_and_sent",
       message: `Invoice ${invoice.invoice_number} created and emailed to ${invoice.client_email}`,
     });
   } catch (err) {
-    console.error("Create & Send Error:", err);
-    res
+    console.error("Create & Send Root Error:", err);
+    return res
       .status(500)
       .json({ error: err.message || "Failed to create and send invoice." });
   }

@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "latest",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -21,9 +22,8 @@
     "node-cron": "^4.6.0",
     "nodemailer": "^10.0.3",
     "pg": "^8.23.0",
-    "puppeteer": "^25.10.0",
-    "resend": "^6.27.0",
-    "@google/genai": "latest"
+    "puppeteer": "^25.11.0",
+    "resend": "^6.27.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

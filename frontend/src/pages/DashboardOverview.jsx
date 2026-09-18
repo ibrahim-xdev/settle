@@ -210,7 +210,7 @@ export default function DashboardOverview() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EDEAE1] text-[14px]">
-                {invoices.slice(0, 5).map((inv) => (
+                {invoices.map((inv) => (
                   <tr
                     key={inv.id}
                     className="hover:bg-[#F4F2ED]/30 transition-colors"

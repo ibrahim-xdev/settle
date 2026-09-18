@@ -9,15 +9,21 @@ function generateInvoiceHTML(invoice) {
     created_at,
   } = invoice;
 
-  formattedAmount = Number(parseFloat(amount) || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  // Fixed missing 'const' variable declaration
+  const formattedAmount = Number(parseFloat(amount) || 0).toLocaleString(
+    "en-US",
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    },
+  );
+
   const issueDate = new Date(created_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+
   const dueDate = new Date(due_date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -32,41 +38,58 @@ function generateInvoiceHTML(invoice) {
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        font-family: 'Helvetica', Arial, sans-serif;
+        font-family: Arial, Helvetica, sans-serif;
         color: #1a1a1a;
-        padding: 50px;
+        padding: 40px;
+        background-color: #ffffff;
+      }
+      .clearfix::after {
+        content: "";
+        clear: both;
+        display: table;
       }
       .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 50px;
+        margin-bottom: 40px;
+      }
+      .header-left {
+        float: left;
+      }
+      .header-right {
+        float: right;
+        text-align: right;
       }
       .business-name {
-        font-size: 22px;
+        font-size: 20px;
         font-weight: bold;
       }
       .invoice-label {
-        font-size: 28px;
+        font-size: 26px;
         color: #888;
-        text-align: right;
+        font-weight: bold;
       }
       .invoice-number {
         font-size: 14px;
         color: #555;
-        text-align: right;
         margin-top: 4px;
       }
       .details-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 40px;
+        margin-bottom: 30px;
+      }
+      .details-left {
+        float: left;
+        width: 50%;
+      }
+      .details-right {
+        float: right;
+        width: 50%;
+        text-align: right;
       }
       .details-block h4 {
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
         color: #888;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
       }
       .details-block p {
         font-size: 14px;
@@ -79,11 +102,12 @@ function generateInvoiceHTML(invoice) {
       }
       th {
         text-align: left;
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
         color: #888;
         border-bottom: 2px solid #eee;
         padding: 10px 0;
+        letter-spacing: 0.5px;
       }
       td {
         padding: 14px 0;
@@ -91,17 +115,12 @@ function generateInvoiceHTML(invoice) {
         border-bottom: 1px solid #eee;
       }
       .amount-col { text-align: right; }
-      .total-row {
-        display: flex;
-        justify-content: flex-end;
+      .total-container {
+        float: right;
+        width: 250px;
         margin-top: 10px;
       }
-      .total-box {
-        width: 250px;
-      }
       .total-line {
-        display: flex;
-        justify-content: space-between;
         padding: 8px 0;
         font-size: 14px;
       }
@@ -111,32 +130,37 @@ function generateInvoiceHTML(invoice) {
         font-size: 16px;
         margin-top: 6px;
       }
+      .total-label { float: left; }
+      .total-value { float: right; }
       .footer {
-        margin-top: 60px;
+        margin-top: 80px;
         font-size: 12px;
         color: #888;
         text-align: center;
+        clear: both;
       }
     </style>
   </head>
   <body>
-  <div class="header">
-      <div class="business-name">Ibrahim — Web Development</div>
-      <div>
+    <div class="header clearfix">
+      <div class="header-left">
+        <div class="business-name">Ibrahim — Web Development</div>
+      </div>
+      <div class="header-right">
         <div class="invoice-label">INVOICE</div>
         <div class="invoice-number">${invoice_number}</div>
       </div>
     </div>
 
-    <div class="details-row">
-      <div class="details-block">
+    <div class="details-row clearfix">
+      <div class="details-left details-block">
         <h4>Billed to</h4>
         <p>${client_name}<br>${client_email}</p>
       </div>
-      <div class="details-block">
+      <div class="details-right details-block">
         <h4>Issue date</h4>
         <p>${issueDate}</p>
-        <h4 style="margin-top: 16px;">Due date</h4>
+        <h4 style="margin-top: 14px;">Due date</h4>
         <p>${dueDate}</p>
       </div>
     </div>
@@ -154,13 +178,14 @@ function generateInvoiceHTML(invoice) {
           <td class="amount-col">$${formattedAmount}</td>
         </tr>
       </tbody>
+     Kue
     </table>
 
-    <div class="total-row">
-      <div class="total-box">
-        <div class="total-line final">
-          <span>Total due</span>
-          <span>$${formattedAmount}</span>
+    <div class="clearfix">
+      <div class="total-container">
+        <div class="total-line final clearfix">
+          <span class="total-label">Total due</span>
+          <span class="total-value">$${formattedAmount}</span>
         </div>
       </div>
     </div>
