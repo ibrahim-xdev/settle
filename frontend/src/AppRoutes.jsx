@@ -9,7 +9,7 @@ import DashboardLayout from "./pages/DashboardLayout";
 import DashboardOverview from "./pages/DashboardOverview";
 import SettingsPage from "./pages/SettingsPage";
 import PageTransition from "./components/PageTransition";
-
+import VerifyEmail from "./pages/verifyEmail";
 // Add new pages here as you build them — one <Route> per page.
 // Example when you add a dashboard later:
 // import Dashboard from './components/Dashboard';
@@ -24,18 +24,61 @@ export default function AppRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
-        <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
-        <Route path="/signup" element={<PageTransition><SignupPage /></PageTransition>} />
+        <Route
+          path="/"
+          element={
+            <PageTransition>
+              <LandingPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PageTransition>
+              <LoginPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PageTransition>
+              <SignupPage />
+            </PageTransition>
+          }
+        />
+        <Route path="/verify-email" element={<VerifyEmail />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<PageTransition><DashboardOverview /></PageTransition>} />
-            <Route path="/dashboard/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+            <Route
+              path="/dashboard"
+              element={
+                <PageTransition>
+                  <DashboardOverview />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/settings"
+              element={
+                <PageTransition>
+                  <SettingsPage />
+                </PageTransition>
+              }
+            />
           </Route>
         </Route>
 
-        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+        <Route
+          path="*"
+          element={
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );

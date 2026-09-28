@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import api from "../api/axios";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -26,16 +26,13 @@ export default function SignupPage() {
 
     try {
       // 1. Send registration data to Express backend
-      await axios.post("http://localhost:5001/api/auth/register", form);
+      await api.post("/api/auth/register", form);
 
       // 2. Automatically log the user in to receive their JWT token
-      const loginRes = await axios.post(
-        "http://localhost:5001/api/auth/login",
-        {
-          email: form.email,
-          password: form.password,
-        },
-      );
+      const loginRes = await api.post("/api/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
 
       // 3. Store JWT token in localStorage
       localStorage.setItem("token", loginRes.data.token);
@@ -52,7 +49,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F2ED] text-[#17140F] antialiased flex flex-col justify-between font-body">
+    <div className="min-h-screen bg-[#F4F2ED] dark:bg-[#121212] text-[#17140F] dark:text-[#E5E5E5] antialiased flex flex-col justify-between font-body transition-colors duration-200">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
 
@@ -70,13 +67,13 @@ export default function SignupPage() {
       <header className="max-w-6xl w-full mx-auto px-6 md:px-10 pt-7 flex items-center justify-between">
         <Link
           to="/"
-          className="font-display text-[20px] tracking-tight hover:opacity-80 transition-opacity"
+          className="font-display text-[20px] tracking-tight hover:opacity-80 transition-opacity text-[#17140F] dark:text-[#E5E5E5]"
         >
           Settle
         </Link>
         <Link
           to="/login"
-          className="text-[14px] font-medium text-[#6E6A5E] hover:text-[#17140F] transition-colors"
+          className="text-[14px] font-medium text-[#6E6A5E] dark:text-[#A0A0A0] hover:text-[#17140F] dark:hover:text-white transition-colors"
         >
           Already have an account? Log in
         </Link>
@@ -84,12 +81,12 @@ export default function SignupPage() {
 
       {/* Signup Card */}
       <main className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="settle-form w-full max-w-[400px] bg-white rounded-[12px] border border-[#DEDACD] shadow-[0_15px_35px_-15px_rgba(23,20,15,0.12)] p-8">
+        <div className="settle-form w-full max-w-[400px] bg-white dark:bg-[#1E1E1E] rounded-[12px] border border-[#DEDACD] dark:border-[#2C2C2C] shadow-[0_15px_35px_-15px_rgba(23,20,15,0.12)] dark:shadow-none p-8 transition-colors duration-200">
           <div className="text-center mb-8">
-            <h1 className="font-display text-[28px] tracking-tight">
+            <h1 className="font-display text-[28px] tracking-tight text-[#17140F] dark:text-[#E5E5E5]">
               Start settling invoices
             </h1>
-            <p className="text-[14px] text-[#6E6A5E] mt-2 leading-[1.5]">
+            <p className="text-[14px] text-[#6E6A5E] dark:text-[#A0A0A0] mt-2 leading-[1.5]">
               Create an account in seconds. No credit card required.
             </p>
           </div>
@@ -97,7 +94,7 @@ export default function SignupPage() {
           {/* Social Auth Placeholder */}
           <button
             type="button"
-            className="w-full h-11 flex items-center justify-center gap-3 rounded-[6px] border border-[#DEDACD] bg-white text-[14px] font-medium text-[#17140F] hover:bg-[#F4F2ED] transition-all active:scale-[0.98]"
+            className="w-full h-11 flex items-center justify-center gap-3 rounded-[6px] border border-[#DEDACD] dark:border-[#2C2C2C] bg-white dark:bg-[#121212] text-[14px] font-medium text-[#17140F] dark:text-[#E5E5E5] hover:bg-[#F4F2ED] dark:hover:bg-[#2A2A2A] transition-all active:scale-[0.98]"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path
@@ -121,11 +118,11 @@ export default function SignupPage() {
           </button>
 
           <div className="my-6 flex items-center justify-center gap-3">
-            <div className="h-[1px] flex-1 bg-[#EDEAE1]" />
-            <span className="text-[12px] uppercase text-[#6E6A5E] tracking-wider font-medium">
+            <div className="h-[1px] flex-1 bg-[#EDEAE1] dark:bg-[#2C2C2C]" />
+            <span className="text-[12px] uppercase text-[#6E6A5E] dark:text-[#A0A0A0] tracking-wider font-medium">
               or
             </span>
-            <div className="h-[1px] flex-1 bg-[#EDEAE1]" />
+            <div className="h-[1px] flex-1 bg-[#EDEAE1] dark:bg-[#2C2C2C]" />
           </div>
 
           <AnimatePresence>
@@ -137,7 +134,7 @@ export default function SignupPage() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="p-3 rounded-[6px] bg-red-50 border border-red-200 text-red-700 text-[13px]">
+                <div className="p-3 rounded-[6px] bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-[13px]">
                   {error}
                 </div>
               </motion.div>
@@ -146,7 +143,7 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[13px] font-medium text-[#17140F] mb-1.5">
+              <label className="block text-[13px] font-medium text-[#17140F] dark:text-[#E5E5E5] mb-1.5">
                 Full Name
               </label>
               <input
@@ -156,12 +153,12 @@ export default function SignupPage() {
                 onChange={handleChange}
                 placeholder="Ibrahim Malik"
                 required
-                className="w-full h-11 px-3.5 rounded-[6px] border border-[#DEDACD] bg-[#F4F2ED]/40 text-[14px] text-[#17140F] placeholder-[#9E9A8E] focus:outline-none focus:border-[#17140F] focus:bg-white transition-all"
+                className="w-full h-11 px-3.5 rounded-[6px] border border-[#DEDACD] dark:border-[#2C2C2C] bg-[#F4F2ED]/40 dark:bg-[#121212] text-[14px] text-[#17140F] dark:text-white placeholder-[#9E9A8E] dark:placeholder-[#666666] focus:outline-none focus:border-[#17140F] dark:focus:border-[#888888] focus:bg-white dark:focus:bg-[#181818] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-[13px] font-medium text-[#17140F] mb-1.5">
+              <label className="block text-[13px] font-medium text-[#17140F] dark:text-[#E5E5E5] mb-1.5">
                 Email Address
               </label>
               <input
@@ -171,12 +168,12 @@ export default function SignupPage() {
                 onChange={handleChange}
                 placeholder="ibrahim@example.com"
                 required
-                className="w-full h-11 px-3.5 rounded-[6px] border border-[#DEDACD] bg-[#F4F2ED]/40 text-[14px] text-[#17140F] placeholder-[#9E9A8E] focus:outline-none focus:border-[#17140F] focus:bg-white transition-all"
+                className="w-full h-11 px-3.5 rounded-[6px] border border-[#DEDACD] dark:border-[#2C2C2C] bg-[#F4F2ED]/40 dark:bg-[#121212] text-[14px] text-[#17140F] dark:text-white placeholder-[#9E9A8E] dark:placeholder-[#666666] focus:outline-none focus:border-[#17140F] dark:focus:border-[#888888] focus:bg-white dark:focus:bg-[#181818] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-[13px] font-medium text-[#17140F] mb-1.5">
+              <label className="block text-[13px] font-medium text-[#17140F] dark:text-[#E5E5E5] mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -187,12 +184,12 @@ export default function SignupPage() {
                   onChange={handleChange}
                   placeholder="••••••••"
                   required
-                  className="w-full h-11 pl-3.5 pr-12 rounded-[6px] border border-[#DEDACD] bg-[#F4F2ED]/40 text-[14px] text-[#17140F] placeholder-[#9E9A8E] focus:outline-none focus:border-[#17140F] focus:bg-white transition-all"
+                  className="w-full h-11 pl-3.5 pr-12 rounded-[6px] border border-[#DEDACD] dark:border-[#2C2C2C] bg-[#F4F2ED]/40 dark:bg-[#121212] text-[14px] text-[#17140F] dark:text-white placeholder-[#9E9A8E] dark:placeholder-[#666666] focus:outline-none focus:border-[#17140F] dark:focus:border-[#888888] focus:bg-white dark:focus:bg-[#181818] transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px] font-medium text-[#6E6A5E] hover:text-[#17140F] transition-all active:scale-95"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px] font-medium text-[#6E6A5E] dark:text-[#A0A0A0] hover:text-[#17140F] dark:hover:text-white transition-all active:scale-95"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
@@ -202,25 +199,25 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 mt-2 rounded-[6px] bg-[#17140F] text-[#F4F2ED] text-[14px] font-medium hover:bg-[#2B2621] transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+              className="w-full h-11 mt-2 rounded-[6px] bg-[#17140F] dark:bg-[#E5E5E5] text-[#F4F2ED] dark:text-[#17140F] text-[14px] font-medium hover:bg-[#2B2621] dark:hover:bg-white transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
               {loading ? "Creating account..." : "Create free account"}
             </button>
           </form>
 
           {/* Legal Disclosures */}
-          <p className="mt-6 text-center text-[12px] leading-[1.5] text-[#6E6A5E]">
+          <p className="mt-6 text-center text-[12px] leading-[1.5] text-[#6E6A5E] dark:text-[#A0A0A0]">
             By continuing, you agree to Settle's{" "}
             <a
               href="#"
-              className="text-[#17140F] underline hover:text-[#96742B]"
+              className="text-[#17140F] dark:text-[#E5E5E5] underline hover:text-[#96742B] dark:hover:text-[#D4AF37]"
             >
               Terms of Service
             </a>{" "}
             and acknowledge our{" "}
             <a
               href="#"
-              className="text-[#17140F] underline hover:text-[#96742B]"
+              className="text-[#17140F] dark:text-[#E5E5E5] underline hover:text-[#96742B] dark:hover:text-[#D4AF37]"
             >
               Privacy Policy
             </a>
@@ -230,7 +227,7 @@ export default function SignupPage() {
       </main>
 
       {/* Footer */}
-      <footer className="max-w-6xl w-full mx-auto px-6 md:px-10 py-6 text-center text-[13px] text-[#6E6A5E]">
+      <footer className="max-w-6xl w-full mx-auto px-6 md:px-10 py-6 text-center text-[13px] text-[#6E6A5E] dark:text-[#A0A0A0]">
         Built by Ibrahim — Settle © {new Date().getFullYear()}
       </footer>
     </div>

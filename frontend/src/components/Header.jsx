@@ -6,7 +6,10 @@ export default function Header() {
       <span className="font-display text-[20px] tracking-tight">Settle</span>
 
       <nav className="hidden md:flex items-center gap-8 text-[14px] text-[#6E6A5E]">
-        <a href="#how" className="relative group hover:text-[#17140F] transition-colors">
+        <a
+          href="#how"
+          className="relative group hover:text-[#17140F] transition-colors"
+        >
           How it works
           <span className="absolute left-0 -bottom-1 h-[1px] w-0 bg-[#17140F] transition-all duration-300 group-hover:w-full" />
         </a>

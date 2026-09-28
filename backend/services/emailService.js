@@ -1,5 +1,29 @@
 const nodemailer = require("nodemailer");
 
+// System transporter for application emails (like Account Verification)
+function buildSystemTransporter() {
+  const appEmail = process.env.APP_EMAIL || process.env.SMTP_USER;
+  const appPass = process.env.APP_EMAIL_PASS || process.env.SMTP_PASS;
+
+  if (!appEmail || !appPass) {
+    throw new Error(
+      "System SMTP credentials (APP_EMAIL, APP_EMAIL_PASS) are missing in environment variables.",
+    );
+  }
+
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    service: "gmail",
+    auth: {
+      user: appEmail.trim(),
+      pass: appPass,
+    },
+  });
+}
+
+// User transporter for outgoing customer invoices
 function buildTransporter(senderUser) {
   if (!senderUser.smtp_pass) {
     throw new Error(
@@ -19,6 +43,36 @@ function buildTransporter(senderUser) {
   });
 }
 
+// 1. NEW: Send Account Verification Email upon registration
+async function sendVerificationEmail(userEmail, token) {
+  const transporter = buildSystemTransporter();
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
+
+  const mailOptions = {
+    from: `"Settle" <${process.env.APP_EMAIL || process.env.SMTP_USER}>`,
+    to: userEmail.trim(),
+    subject: "Verify your Settle Account Email",
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #17140F; padding: 20px;">
+        <h2>Welcome to Settle!</h2>
+        <p>Please click the button below to verify your email address and activate your account:</p>
+        <p style="margin: 24px 0;">
+          <a href="${verificationUrl}" style="background-color: #17140F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Verify Email
+          </a>
+        </p>
+        <p style="color: #6E6A5E; font-size: 13px;">Or copy and paste this link into your browser:</p>
+        <p style="font-size: 13px;"><a href="${verificationUrl}">${verificationUrl}</a></p>
+        <p style="color: #888; font-size: 12px; margin-top: 30px;">This link will expire in 24 hours.</p>
+      </div>
+    `,
+  };
+
+  return await transporter.sendMail(mailOptions);
+}
+
+// 2. Send Invoice PDF Email
 async function sendInvoiceEmail(invoice, pdfBuffer, senderUser) {
   const transporter = buildTransporter(senderUser);
 
@@ -53,6 +107,7 @@ async function sendInvoiceEmail(invoice, pdfBuffer, senderUser) {
   return await transporter.sendMail(mailOptions);
 }
 
+// 3. Send Overdue Reminder Email
 async function sendReminderEmail(invoice, reminderText, senderUser) {
   const transporter = buildTransporter(senderUser);
 
@@ -66,4 +121,8 @@ async function sendReminderEmail(invoice, reminderText, senderUser) {
   return await transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendInvoiceEmail, sendReminderEmail };
+module.exports = {
+  sendVerificationEmail,
+  sendInvoiceEmail,
+  sendReminderEmail,
+};

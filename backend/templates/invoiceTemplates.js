@@ -178,7 +178,6 @@ function generateInvoiceHTML(invoice) {
           <td class="amount-col">$${formattedAmount}</td>
         </tr>
       </tbody>
-     Kue
     </table>
 
     <div class="clearfix">

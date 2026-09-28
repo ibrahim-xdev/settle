@@ -104,6 +104,74 @@ router.post("/", async (req, res) => {
   }
 });
 
+// DELETE /api/invoices/:id
+router.delete("/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Delete invoice only if it belongs to the authenticated user
+    const result = await pool.query(
+      "DELETE FROM invoices WHERE id = $1 AND user_id = $2 RETURNING *",
+      [id, userId],
+    );
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "Invoice not found or unauthorized." });
+    }
+
+    res.json({
+      message: "Invoice deleted successfully.",
+      deletedInvoice: result.rows[0],
+    });
+  } catch (err) {
+    console.error("Delete Invoice Error:", err);
+    res.status(500).json({ error: "Failed to delete invoice." });
+  }
+});
+
+// PUT /api/invoices/:id
+router.put("/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { clientName, clientEmail, projectDescription, amount, dueDate } =
+    req.body;
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `UPDATE invoices 
+       SET client_name = $1, client_email = $2, project_description = $3, amount = $4, due_date = $5
+       WHERE id = $6 AND user_id = $7
+       RETURNING *`,
+      [
+        clientName,
+        clientEmail,
+        projectDescription,
+        amount,
+        dueDate,
+        id,
+        userId,
+      ],
+    );
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "Invoice not found or unauthorized." });
+    }
+
+    res.json({
+      message: "Invoice updated successfully.",
+      invoice: result.rows[0],
+    });
+  } catch (err) {
+    console.error("Update Invoice Error:", err);
+    res.status(500).json({ error: "Failed to update invoice." });
+  }
+});
+
 // FETCH ALL INVOICES FOR LOGGED-IN USER
 router.get("/", async (req, res) => {
   try {

@@ -21,7 +21,15 @@ async function initdb() {
       );
     `);
 
-    // 2. Ensure user_id column exists on invoices table
+    // 2. Add email verification columns safely to existing or newly created users table
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP;
+    `);
+
+    // 3. Ensure user_id column exists on invoices table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS invoices (
         id SERIAL PRIMARY KEY,
