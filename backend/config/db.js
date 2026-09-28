@@ -2,8 +2,12 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
+// Enable SSL mode in production (required for Render / Supabase PostgreSQL)
+const isProduction = process.env.NODE_ENV === "production";
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 async function initdb() {
@@ -29,7 +33,7 @@ async function initdb() {
       ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP;
     `);
 
-    // 3. Ensure user_id column exists on invoices table
+    // 3. Create Invoices Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS invoices (
         id SERIAL PRIMARY KEY,
@@ -52,11 +56,14 @@ async function initdb() {
       ADD COLUMN IF NOT EXISTS user_id INT REFERENCES users(id) ON DELETE CASCADE;
     `);
 
-    console.log("Database tables initialized successfully.");
+    console.log("✅ Database tables initialized successfully.");
   } catch (err) {
-    console.error("Database initialization error:", err);
+    console.error("❌ Database initialization error:", err);
   }
 }
+
+// Automatically initialize schema on startup
+initdb();
 
 async function generateInvoiceNumber(userId) {
   const result = await pool.query(

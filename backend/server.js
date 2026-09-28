@@ -9,6 +9,7 @@ const authRoutes = require("./routes/authRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 
 const app = express();
+app.set("trust proxy", 1);
 
 // 1. Helmet Security Headers
 app.use(helmet());
