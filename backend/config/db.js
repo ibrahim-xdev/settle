@@ -31,10 +31,14 @@ async function initdb() {
     // 2. Add email verification columns safely
     await pool.query(`
       ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT TRUE,
       ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255),
       ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP;
     `);
+
+    await pool.query(`UPDATE users 
+SET is_verified = TRUE 
+WHERE is_verified = FALSE`);
 
     // 3. Create Invoices Table
     await pool.query(`
