@@ -6,11 +6,13 @@ const generateInvoiceHTML = require("../templates/invoiceTemplates");
 async function generateInvoicePDF(invoice) {
   const html = generateInvoiceHTML(invoice);
 
-  const browser = await puppeteer.launch({
+  const isProduction = process.env.NODE_ENV === "production";
+  const localChromePath =
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+
+  // Configure launch options dynamically based on environment
+  const launchOptions = {
     headless: "new",
-    // Points directly to installed Chrome on Windows
-    executablePath:
-      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     protocolTimeout: 60000,
     args: [
       "--no-sandbox",
@@ -19,31 +21,49 @@ async function generateInvoicePDF(invoice) {
       "--disable-gpu",
       "--no-first-run",
       "--no-zygote",
+      "--single-process",
     ],
-  });
+  };
+
+  // Only use local Windows Chrome path if NOT on production and the path exists locally
+  if (!isProduction && fs.existsSync(localChromePath)) {
+    launchOptions.executablePath = localChromePath;
+  }
+
+  const browser = await puppeteer.launch(launchOptions);
 
   try {
     const page = await browser.newPage();
 
-    // Bypass Network domain enablement hanging by setting direct HTML content
+    // Set invoice HTML content
     await page.setContent(html, {
       waitUntil: "domcontentloaded",
       timeout: 20000,
     });
 
-    const outputDir = path.join(__dirname, "../generated_invoices");
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    let filePath = null;
+
+    // Only write PDF to physical disk in local development environments
+    if (!isProduction) {
+      const outputDir = path.join(__dirname, "../generated_invoices");
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      filePath = path.join(outputDir, `${invoice.invoice_number}.pdf`);
     }
 
-    const filePath = path.join(outputDir, `${invoice.invoice_number}.pdf`);
-
-    const pdfBuffer = await page.pdf({
-      path: filePath,
+    // Generate PDF buffer (pass path locally, omit path on production)
+    const pdfOptions = {
       format: "A4",
       printBackground: true,
       margin: { top: "20px", bottom: "20px", left: "20px", right: "20px" },
-    });
+    };
+
+    if (filePath) {
+      pdfOptions.path = filePath;
+    }
+
+    const pdfBuffer = await page.pdf(pdfOptions);
 
     return { pdfBuffer: Buffer.from(pdfBuffer), filePath };
   } finally {
