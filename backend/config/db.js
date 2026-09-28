@@ -2,12 +2,15 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
-// Enable SSL mode in production (required for Render / Supabase PostgreSQL)
-const isProduction = process.env.NODE_ENV === "production";
+const dbUrl = process.env.DATABASE_URL || "";
+
+// Detect if running locally (localhost / 127.0.0.1) vs remote production database
+const isLocal = dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1");
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
+  connectionString: dbUrl,
+  // Use SSL for remote production DBs, disable for local PostgreSQL
+  ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
 async function initdb() {
@@ -25,7 +28,7 @@ async function initdb() {
       );
     `);
 
-    // 2. Add email verification columns safely to existing or newly created users table
+    // 2. Add email verification columns safely
     await pool.query(`
       ALTER TABLE users 
       ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
