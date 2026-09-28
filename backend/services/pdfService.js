@@ -7,43 +7,73 @@ const generateInvoiceHTML = require("../templates/invoiceTemplates");
 async function generateInvoicePDF(invoice) {
   const html = generateInvoiceHTML(invoice);
   const isProduction = process.env.NODE_ENV === "production";
-  const localChromePath =
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 
-  let executablePath;
+  // Common local Chrome paths across Windows and Linux
+  const possibleLocalPaths = [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium-browser",
+  ];
+
+  let executablePath = null;
+
   if (isProduction) {
     executablePath = await chromium.executablePath();
-  } else if (fs.existsSync(localChromePath)) {
-    executablePath = localChromePath;
   } else {
-    executablePath = await chromium.executablePath();
+    for (const p of possibleLocalPaths) {
+      if (fs.existsSync(p)) {
+        executablePath = p;
+        break;
+      }
+    }
+    // Fallback to sparticuz chromium if no local Chrome is found in dev
+    if (!executablePath) {
+      executablePath = await chromium.executablePath();
+    }
   }
 
-  const browser = await puppeteer.launch({
-    args: isProduction
-      ? chromium.args
-      : ["--no-sandbox", "--disable-setuid-sandbox"],
-    defaultViewport: chromium.defaultViewport,
-    executablePath,
-    headless: isProduction ? chromium.headless : "new",
-  });
+  // Set up robust production and development launch flags
+  const launchArgs = isProduction
+    ? [
+        ...chromium.args,
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ]
+    : ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"];
+
+  let browser = null;
 
   try {
-    const page = await browser.newPage();
-    await page.setContent(html, {
-      waitUntil: "domcontentloaded",
-      timeout: 20000,
+    browser = await puppeteer.launch({
+      args: launchArgs,
+      defaultViewport: chromium.defaultViewport || { width: 1280, height: 720 },
+      executablePath,
+      headless: isProduction ? chromium.headless : true,
     });
 
-    const pdfBuffer = await page.pdf({
+    const page = await browser.newPage();
+
+    // Set HTML content and wait until network idle for external assets/fonts
+    await page.setContent(html, {
+      waitUntil: ["domcontentloaded", "networkidle0"],
+      timeout: 30000,
+    });
+
+    const pdfUint8Array = await page.pdf({
       format: "A4",
       printBackground: true,
       margin: { top: "20px", bottom: "20px", left: "20px", right: "20px" },
     });
 
-    return { pdfBuffer: Buffer.from(pdfBuffer) };
+    return { pdfBuffer: Buffer.from(pdfUint8Array) };
+  } catch (error) {
+    console.error("PDF Generation Error Details:", error);
+    throw new Error(`Failed to generate PDF: ${error.message}`);
   } finally {
-    if (browser) {
+    if (browser !== null) {
       await browser.close();
     }
   }
