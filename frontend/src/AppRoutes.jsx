@@ -9,7 +9,7 @@ import DashboardLayout from "./pages/DashboardLayout";
 import DashboardOverview from "./pages/DashboardOverview";
 import SettingsPage from "./pages/SettingsPage";
 import PageTransition from "./components/PageTransition";
-import VerifyEmail from "./pages/verifyEmail";
+import VerifyEmail from "./pages/VerifyEmail";
 // Add new pages here as you build them — one <Route> per page.
 // Example when you add a dashboard later:
 // import Dashboard from './components/Dashboard';
