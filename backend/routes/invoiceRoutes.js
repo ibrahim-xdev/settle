@@ -12,35 +12,141 @@ const { sendInvoiceEmail } = require("../services/emailService");
 const router = express.Router();
 
 router.use(authenticateToken);
+
+async function processInvoiceDelivery(invoice, user) {
+  console.log(`🚀 Starting delivery for ${invoice.invoice_number}`);
+
+  let pdfBuffer;
+
+  // --------------------------------------------------
+  // Generate PDF
+  // --------------------------------------------------
+
+  try {
+    console.log(`📄 Generating PDF for ${invoice.invoice_number}...`);
+
+    const pdfResult = await generateInvoicePDF(invoice);
+
+    pdfBuffer = pdfResult.pdfBuffer;
+
+    console.log(`✅ PDF generated for ${invoice.invoice_number}`);
+  } catch (error) {
+    console.error(
+      `❌ PDF generation failed for ${invoice.invoice_number}:`,
+      error,
+    );
+
+    await pool.query(
+      `UPDATE invoices
+       SET delivery_status = 'failed',
+           delivery_error = $1
+       WHERE id = $2`,
+      [`PDF generation failed: ${error.message}`, invoice.id],
+    );
+
+    return;
+  }
+
+  // --------------------------------------------------
+  // Send email
+  // --------------------------------------------------
+
+  try {
+    console.log(
+      `📧 Sending invoice ${invoice.invoice_number} to ${invoice.client_email}...`,
+    );
+
+    await sendInvoiceEmail(invoice, pdfBuffer, user);
+
+    console.log(`✅ Invoice ${invoice.invoice_number} emailed successfully`);
+
+    // --------------------------------------------------
+    // Mark delivery successful
+    // --------------------------------------------------
+
+    await pool.query(
+      `UPDATE invoices
+       SET delivery_status = 'sent',
+           delivery_error = NULL
+       WHERE id = $1`,
+      [invoice.id],
+    );
+
+    console.log(`🎉 Invoice ${invoice.invoice_number} completed successfully`);
+  } catch (error) {
+    console.error(`❌ Email failed for ${invoice.invoice_number}:`, error);
+
+    await pool.query(
+      `UPDATE invoices
+       SET delivery_status = 'failed',
+           delivery_error = $1
+       WHERE id = $2`,
+      [`Email delivery failed: ${error.message}`, invoice.id],
+    );
+  }
+}
+
 // CREATE & SEND INVOICE (One-Click)
 router.post("/", async (req, res) => {
   const { clientName, clientEmail, projectDescription, amount, dueDate } =
     req.body;
 
   if (!clientName || !clientEmail || !amount || !dueDate) {
-    return res.status(400).json({ error: "Missing required fields." });
+    return res.status(400).json({
+      error: "Missing required fields.",
+    });
   }
 
   try {
-    // 1. Verify User & Check SMTP Credentials
+    // --------------------------------------------------
+    // 1. Get authenticated user's SMTP credentials
+    // --------------------------------------------------
+
     const userResult = await pool.query(
-      "SELECT id, name, email, smtp_user, smtp_pass FROM users WHERE id = $1",
+      `SELECT id, name, email, smtp_user, smtp_pass
+       FROM users
+       WHERE id = $1`,
       [req.user.id],
     );
+
     const user = userResult.rows[0];
 
-    if (!user || !user.smtp_user || !user.smtp_pass) {
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found.",
+      });
+    }
+
+    if (!user.smtp_user || !user.smtp_pass) {
       return res.status(400).json({
         error:
           "SMTP credentials missing. Please configure your Gmail App Password in Settings before sending invoices.",
       });
     }
 
-    // 2. Generate unique invoice number & insert into DB
+    // --------------------------------------------------
+    // 2. Generate invoice number
+    // --------------------------------------------------
+
     const invoiceNumber = await generateInvoiceNumber(req.user.id);
+
+    // --------------------------------------------------
+    // 3. Create invoice immediately
+    // --------------------------------------------------
+
     const result = await pool.query(
-      `INSERT INTO invoices (user_id, invoice_number, client_name, client_email, project_description, amount, due_date) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      `INSERT INTO invoices (
+        user_id,
+        invoice_number,
+        client_name,
+        client_email,
+        project_description,
+        amount,
+        due_date,
+        delivery_status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'processing')
+      RETURNING *`,
       [
         req.user.id,
         invoiceNumber,
@@ -54,53 +160,49 @@ router.post("/", async (req, res) => {
 
     const invoice = result.rows[0];
 
-    let pdfBuffer;
+    console.log(
+      `📄 Invoice ${invoice.invoice_number} created. Starting background delivery...`,
+    );
 
-    // 3. Generate PDF Buffer with strict error capture
-    try {
-      const pdfResult = await generateInvoicePDF(invoice);
-      pdfBuffer = pdfResult.pdfBuffer;
-    } catch (pdfErr) {
-      console.error("PDF Generation Failed:", pdfErr);
+    // --------------------------------------------------
+    // 4. RESPOND TO FRONTEND IMMEDIATELY
+    // --------------------------------------------------
 
-      // Delete created DB invoice to prevent orphan records
-      await pool.query("DELETE FROM invoices WHERE id = $1", [invoice.id]);
-
-      return res.status(500).json({
-        error: "PDF generation failed. Please check browser service settings.",
-        details: pdfErr.message,
-      });
-    }
-
-    // 4. Send Email via Nodemailer
-    try {
-      await sendInvoiceEmail(invoice, pdfBuffer, user);
-    } catch (emailErr) {
-      console.error("Email Dispatch Failed:", emailErr);
-
-      // Return invoice ID so frontend can show invoice was saved but not mailed
-      return res.status(207).json({
-        id: invoice.id,
-        invoiceNumber: invoice.invoice_number,
-        status: "created_but_not_sent",
-        error:
-          "Invoice saved, but email delivery failed. Please verify SMTP settings.",
-        details: emailErr.message,
-      });
-    }
-
-    // 5. Complete success response
-    return res.status(201).json({
+    res.status(201).json({
       id: invoice.id,
       invoiceNumber: invoice.invoice_number,
-      status: "created_and_sent",
-      message: `Invoice ${invoice.invoice_number} created and emailed to ${invoice.client_email}`,
+      status: "processing",
+      message: `Invoice ${invoice.invoice_number} created successfully. PDF generation and email delivery are processing.`,
+    });
+
+    // --------------------------------------------------
+    // 5. Background PDF + Email processing
+    // --------------------------------------------------
+
+    processInvoiceDelivery(invoice, user).catch(async (error) => {
+      console.error(
+        `❌ Background invoice delivery failed for ${invoice.invoice_number}:`,
+        error,
+      );
+
+      try {
+        await pool.query(
+          `UPDATE invoices
+           SET delivery_status = 'failed',
+               delivery_error = $1
+           WHERE id = $2`,
+          [error?.message || "Unknown delivery error", invoice.id],
+        );
+      } catch (dbError) {
+        console.error("❌ Failed to update invoice delivery status:", dbError);
+      }
     });
   } catch (err) {
-    console.error("Create & Send Root Error:", err);
-    return res
-      .status(500)
-      .json({ error: err.message || "Failed to create and send invoice." });
+    console.error("Create Invoice Error:", err);
+
+    return res.status(500).json({
+      error: err.message || "Failed to create invoice.",
+    });
   }
 });
 

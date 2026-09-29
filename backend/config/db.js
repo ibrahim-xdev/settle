@@ -43,19 +43,30 @@ WHERE is_verified = FALSE`);
     // 3. Create Invoices Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS invoices (
-        id SERIAL PRIMARY KEY,
-        user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        invoice_number VARCHAR(100) UNIQUE NOT NULL,
-        client_name VARCHAR(255) NOT NULL,
-        client_email VARCHAR(255) NOT NULL,
-        project_description TEXT,
-        amount NUMERIC(10, 2) NOT NULL,
-        due_date DATE NOT NULL,
-        status VARCHAR(100) DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        reminder_sent BOOLEAN DEFAULT FALSE
-      );
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  invoice_number VARCHAR(100) UNIQUE NOT NULL,
+  client_name VARCHAR(255) NOT NULL,
+  client_email VARCHAR(255) NOT NULL,
+  project_description TEXT,
+  amount NUMERIC(10, 2) NOT NULL,
+  due_date DATE NOT NULL,
+
+  status VARCHAR(100) DEFAULT 'pending',
+
+  delivery_status VARCHAR(50) DEFAULT 'processing',
+  delivery_error TEXT,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  reminder_sent BOOLEAN DEFAULT FALSE
+)
     `);
+
+    await pool.query(`
+  ALTER TABLE invoices
+  ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50) DEFAULT 'processing',
+  ADD COLUMN IF NOT EXISTS delivery_error TEXT;
+`);
 
     // Safely apply schema migration if table was created previously without user_id
     await pool.query(`

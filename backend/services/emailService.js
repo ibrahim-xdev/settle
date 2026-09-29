@@ -15,11 +15,15 @@ function buildSystemTransporter() {
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    service: "gmail",
+
     auth: {
-      user: appEmail.trim(),
-      pass: appPass,
+      user: senderUser.smtp_user.trim(),
+      pass: senderUser.smtp_pass,
     },
+
+    connectionTimeout: 30000,
+    greetingTimeout: 15000,
+    socketTimeout: 60000,
   });
 }
 
@@ -35,11 +39,15 @@ function buildTransporter(senderUser) {
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    service: "gmail",
+
     auth: {
       user: senderUser.smtp_user.trim(),
       pass: senderUser.smtp_pass,
     },
+
+    connectionTimeout: 30000,
+    greetingTimeout: 15000,
+    socketTimeout: 60000,
   });
 }
 
