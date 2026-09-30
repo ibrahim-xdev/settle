@@ -20,6 +20,9 @@ function buildSystemTransporter() {
     port: 465,
     secure: true,
 
+    // Force IPv4 on Render
+    family: 4,
+
     auth: {
       user: appEmail.trim(),
       pass: appPass,
@@ -36,7 +39,6 @@ function buildSystemTransporter() {
 // Used when sending an invoice from the logged-in user's
 // configured Gmail account.
 // ============================================================
-
 function buildTransporter(senderUser) {
   if (!senderUser) {
     throw new Error("Sender user information is missing.");
@@ -53,6 +55,9 @@ function buildTransporter(senderUser) {
     port: 465,
     secure: true,
 
+    // Force IPv4 on Render
+    family: 4,
+
     auth: {
       user: senderUser.smtp_user.trim(),
       pass: senderUser.smtp_pass,
@@ -63,7 +68,6 @@ function buildTransporter(senderUser) {
     socketTimeout: 60000,
   });
 }
-
 // ============================================================
 // ACCOUNT VERIFICATION EMAIL
 // ============================================================
